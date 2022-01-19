@@ -113,6 +113,7 @@ name = "cart"
 version = "0.1.0"
 dependencies = [
  "buddy-alloc",
+ "heapless",
  "wasm4",
 ]
 
@@ -639,9 +640,9 @@ dependencies = [
 
 [[package]]
 name = "wasm4"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13acc9f9084a08d63e5cfe5f6c6878bb717bc70e3b10d1253dff5756bb8b3f55"
+checksum = "4497233ea7de3170adb83699ca014aa34a7b1b2198660ba5f09c29e62f4a86d9"
 dependencies = [
  "bitflags",
  "wasm4-common",
@@ -651,15 +652,15 @@ dependencies = [
 
 [[package]]
 name = "wasm4-common"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d365c922ec335460b67f0b54c909b69372abc691dd008d26f89370d83b7852d"
+checksum = "b5ee373e89878ecd793acf3e190a2770a31ab52046a6a848c96a0385634f8648"
 
 [[package]]
 name = "wasm4-impl"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df4f1d2f5863d72698654dc43f993d9858d367920ea96498211cee18991d712b"
+checksum = "bde7d8f88ac85bd3b22e8fd7222f65d61fb0ace658d62f578736d51cf45a958d"
 dependencies = [
  "anyhow",
  "bitvec",
@@ -674,9 +675,9 @@ dependencies = [
 
 [[package]]
 name = "wasm4-sys"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96960bf4918ac78077191324caaeef9050989b263d798dad45b67724ccf8e8a6"
+checksum = "c5ba42cc205f8b7fe1a804dca885a8beb97e94d4345fb3bbe073b2798c516b61"
 
 [[package]]
 name = "weezl"

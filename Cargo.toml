@@ -8,7 +8,9 @@ edition = "2021"
 
 [dependencies]
 buddy-alloc = { version = "0.4.1", optional = true }
-wasm4 = "0.1.0"
+heapless = "0.7.9"
+#wasm4 = {version ="0.1.2", path = "../wasm4-rs/wasm4"}
+wasm4 = "0.1.2"
 
 [profile.release]
 opt-level = "z"
@@ -21,4 +23,3 @@ lto = true
 [features]
 # use `--no-default-features` or comment out next line to disable allocator
 default = ["buddy-alloc"]
-

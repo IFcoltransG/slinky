@@ -11,7 +11,10 @@ use wasm4::{
     main,
     rt::{Resources, Runtime},
     sound::{Channel, Duration, Flags, Frames, LinearFrequency, Mode},
-    sys::{BUTTON_1, BUTTON_2, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT, BUTTON_UP, GAMEPAD1},
+    sys::{
+        BUTTON_1, BUTTON_2, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT, BUTTON_UP, DRAW_COLORS,
+        GAMEPAD1,
+    },
     trace,
 };
 
@@ -66,29 +69,31 @@ impl Runtime for SlinkyRuntime {
         SlinkyRuntime {
             frames: 0,
             resources,
-            player: ([0, 80 - 8 / 2], 3),
+            player: ([160, 200], 2),
             // coins: Vec::new(),
         }
     }
 
     fn update(&mut self) {
         self.resources.framebuffer.replace_palette(PALETTE);
+        // background
+        // unsafe { *DRAW_COLORS = 0x2222 }
         // self.resources.framebuffer.rect([0, 0], [160, 160]);
         // waves
-        for i in 0..20 {
-            self.resources.framebuffer.blit(
-                &(match tile_horizontal(&WAVE_ATLAS, 8, (self.frames / 2 % 8) as _) {
-                    Some(view) => view,
-                    _ => {
-                        trace("sprite out of bounds");
-                        continue;
-                    }
-                }),
-                [i * 8, 152],
-                <_>::default(),
-            )
-        }
-        let (button1, button2, direction) = if self.frames % 5 == 0 {
+        // for i in 0..20 {
+        //     self.resources.framebuffer.blit(
+        //         &(match tile_horizontal(&WAVE_ATLAS, 8, (self.frames / 2 % 8) as _) {
+        //             Some(view) => view,
+        //             _ => {
+        //                 trace("sprite out of bounds");
+        //                 continue;
+        //             }
+        //         }),
+        //         [i * 8, 152],
+        //         <_>::default(),
+        //     )
+        // }
+        let (button1, button2, mut direction) = if self.frames % 5 == 0 {
             parse_gamepad(unsafe { *GAMEPAD1 })
         } else {
             (false, false, [0, 0])
@@ -99,21 +104,29 @@ impl Runtime for SlinkyRuntime {
             player_y as usize / SLINKY_FRAMES / 2,
         ];
         let player_x_down = (player_x as usize / SLINKY_FRAMES) % 2 == 1;
+        let carry =
+            ((player_x - 10).rem_euclid(22) != 0).then(|| if player_x_down { -1 } else { 1 });
+        if direction[0] == 0 && self.frames % 5 == 0 {
+            if let Some(offset) = carry {
+                direction[0] = offset
+            }
+        }
         // draw head
         if player_x_down {
+            // extra head piece
             self.resources.framebuffer.blit(
                 &(match tile_horizontal(&SLINKY_ATLAS, 16, (SLINKY_FRAMES - 1) as _) {
                     Some(view) => view,
                     _ => {
-                        trace("Slinky out of bounds!?");
-                        abort();
+                        trace("Slinky out of bounds");
+                        abort()
                     }
                 }),
                 [
-                    (player_x_square * 16) as _,
-                    (player_y_square * 16) as _,
+                    ((player_x_square) * 16) as i32 % 160,
+                    ((player_y_square) * 16) as i32 % 160,
                 ],
-                <_>::default(),
+                BlitTransform::ROTATE | BlitTransform::FLIP_Y | BlitTransform::FLIP_X,
             );
         }
         self.resources.framebuffer.blit(
@@ -124,7 +137,10 @@ impl Runtime for SlinkyRuntime {
                     abort()
                 }
             }),
-            [((player_x_square) * 16) as _, ((player_y_square) * 16) as _],
+            [
+                ((player_x_square) * 16) as i32 % 160,
+                ((player_y_square) * 16) as i32 % 160,
+            ],
             if player_x_down {
                 <_>::default()
             } else {
@@ -133,44 +149,43 @@ impl Runtime for SlinkyRuntime {
         );
         // draw body
         for i in 1..player_length {
-            self.resources.framebuffer.blit(
-                &(match tile_horizontal(&SLINKY_ATLAS, 16, (SLINKY_FRAMES - 1) as _) {
-                    Some(view) => view,
-                    _ => {
-                        trace("Slinky out of bounds!");
-                        continue;
-                    }
-                }),
+            let transforms = if true {
                 [
-                    ((player_x_square - i as usize) * 16) as _,
-                    ((player_y_square) * 16) as _,
-                ],
-                <_>::default(),
-            );
-            self.resources.framebuffer.blit(
-                &(match tile_horizontal(&SLINKY_ATLAS, 16, (SLINKY_FRAMES - 1) as _) {
-                    Some(view) => view,
-                    _ => {
-                        trace("Slinky out of bounds!");
-                        continue;
-                    }
-                }),
+                    BlitTransform::ROTATE | BlitTransform::FLIP_Y | BlitTransform::FLIP_X,
+                    <_>::default(),
+                ]
+            } else {
                 [
-                    ((player_x_square - i as usize) * 16) as _,
-                    ((player_y_square) * 16) as _,
-                ],
-                BlitTransform::ROTATE | BlitTransform::FLIP_Y | BlitTransform::FLIP_X,
-            );
+                    <_>::default(),
+                    BlitTransform::ROTATE | BlitTransform::FLIP_Y | BlitTransform::FLIP_X,
+                ]
+            };
+            for transform in transforms {
+                self.resources.framebuffer.blit(
+                    &(match tile_horizontal(&SLINKY_ATLAS, 16, (SLINKY_FRAMES - 1) as _) {
+                        Some(view) => view,
+                        _ => {
+                            trace("Slinky out of bounds!");
+                            continue;
+                        }
+                    }),
+                    [
+                        (((player_x_square - i as usize) * 16) as i32) % 160,
+                        (((player_y_square) * 16) as i32) % 160,
+                    ],
+                    transform,
+                );
+            }
         }
         self.resources
             .framebuffer
             .replace_palette([PALETTE[2], PALETTE[2], PALETTE[2], PALETTE[3]]);
-        // draw tail
+        // draw main tail
         self.resources.framebuffer.blit(
             &(match tile_horizontal(
                 &SLINKY_ATLAS,
                 16,
-                ((SLINKY_FRAMES as isize - (player_x % SLINKY_FRAMES as i32) as isize) as usize
+                ((SLINKY_FRAMES as isize - (player_x % SLINKY_FRAMES as i32) as isize - 1) as usize
                     % SLINKY_FRAMES) as _,
             ) {
                 Some(view) => view,
@@ -180,26 +195,67 @@ impl Runtime for SlinkyRuntime {
                 }
             }),
             [
-                ((player_x_square - player_length as usize) * 16) as _,
-                ((player_y_square) * 16) as _,
+                (((player_x_square - player_length as usize) * 16) as i32) % 160,
+                (((player_y_square) * 16) as i32) % 160,
             ],
             if player_x_down {
+                // away from rest of slinky
                 BlitTransform::FLIP_X | BlitTransform::ROTATE
             } else {
+                // paired with previous section
                 BlitTransform::FLIP_X
             },
         );
+        if !player_x_down {
+            // extra tail piece
+            self.resources.framebuffer.blit(
+                &(match tile_horizontal(&SLINKY_ATLAS, 16, (SLINKY_FRAMES - 1) as _) {
+                    Some(view) => view,
+                    _ => {
+                        trace("Slinky out of bounds!!");
+                        abort()
+                    }
+                }),
+                [
+                    (((player_x_square - player_length as usize) * 16) as i32) % 160,
+                    (((player_y_square) * 16) as i32) % 160,
+                ],
+                BlitTransform::FLIP_X | BlitTransform::ROTATE,
+            );
+        }
         self.resources.framebuffer.replace_palette(PALETTE);
+        // music
+        let middle_c = 69;
+        // vi - IV - I - V
+        // let notes = [69, 71, 65, 70, 67, 63];
+        let scale = [0, 2, 4, 7, 9, 11];
+        let chords = [(6, false), (4, true), (1, true), (5, true)];
+        let octave = 0;
+        let (current_chord, major) = chords[self.frames / 60 % chords.len()];
+        let frequency = scale[current_chord - 1] + (middle_c - octave * 12) as u8;
         if self.frames % 60 == 0 {
-            let notes = [69, 71, 65, 70, 67, 63];
-            self.play_major_chord(60, notes[self.frames / 60 % notes.len()] - 12, Duration(10))
+            if major {
+                self.play_major_chord(30, frequency, Duration(10))
+            } else {
+                self.play_minor_chord(30, frequency, Duration(10))
+            }
         }
         if self.frames % 60 == 30 {
-            self.play_minor_chord(60, 50, Duration(10))
+            self.play_harmonic(60, middle_c - 4 * 12, Duration(10))
         }
-        self.player.0[0] = (self.player.0[0] + direction[0]).rem_euclid(160);
-        self.player.0[1] = (self.player.0[1] + direction[1]).rem_euclid(160);
+        // movement
+        self.player.0[0] = self.player.0[0] + direction[0];
+        // timing
         self.frames += 1;
+        // self.resources
+        //     .framebuffer
+        //     .text(if player_x_down { "down" } else { "up" }, [0, 0]);
+        // self.resources
+        //     .framebuffer
+        //     .text(&format!("{}", player_x), [0, 8]);
+        // self.resources
+        //     .framebuffer
+        //     .text(&format!("{}", (player_x - 10).rem_euclid(22)), [0, 16]);
     }
 }
 

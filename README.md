@@ -4,5 +4,6 @@ This is not really a game, but rather a controllable slinky on an otherwise empt
 
 ## Links
 
-[itch.io page](https://ifcoltransg.itch.io/slinky)
-[Play online](https://ifcoltransg.github.io/slinky/)
+* [itch.io page](https://ifcoltransg.itch.io/slinky)
+
+* [Play online](https://ifcoltransg.github.io/slinky/)

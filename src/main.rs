@@ -8,7 +8,7 @@ use std::process::abort;
 use music::Music;
 use wasm4::{
     draw::{BlitTransform, Framebuffer, Sprite, SpriteView},
-    main,
+    include_sprites, main,
     rt::{Resources, Runtime},
     sound::{Channel, Duration, Flags, Frames, LinearFrequency, Mode},
     sys::{
@@ -24,7 +24,7 @@ struct SlinkyRuntime {
     player: ([i32; 2], u8), /* pos of rightmost, length
                              * coins: Vec<[i32; 2], 10>, */
 }
-wasm4::include_sprites! {
+include_sprites! {
     //blk-aqu4 on lospec
     const PALETTE: _ = common_palette!(
         0x9ff4e5,
@@ -69,7 +69,7 @@ impl Runtime for SlinkyRuntime {
         SlinkyRuntime {
             frames: 0,
             resources,
-            player: ([160, 200], 2),
+            player: ([80, 200], 2),
             // coins: Vec::new(),
         }
     }
@@ -123,8 +123,8 @@ impl Runtime for SlinkyRuntime {
                     }
                 }),
                 [
-                    ((player_x_square) * 16) as i32 % 160,
-                    ((player_y_square) * 16) as i32 % 160,
+                    (((player_x_square) * 16) as i32).rem_euclid(160),
+                    (((player_y_square) * 16) as i32).rem_euclid(160),
                 ],
                 BlitTransform::ROTATE | BlitTransform::FLIP_Y | BlitTransform::FLIP_X,
             );
@@ -138,8 +138,8 @@ impl Runtime for SlinkyRuntime {
                 }
             }),
             [
-                ((player_x_square) * 16) as i32 % 160,
-                ((player_y_square) * 16) as i32 % 160,
+                (((player_x_square) * 16) as i32).rem_euclid(160),
+                (((player_y_square) * 16) as i32).rem_euclid(160),
             ],
             if player_x_down {
                 <_>::default()
@@ -170,8 +170,8 @@ impl Runtime for SlinkyRuntime {
                         }
                     }),
                     [
-                        (((player_x_square - i as usize) * 16) as i32) % 160,
-                        (((player_y_square) * 16) as i32) % 160,
+                        (((player_x_square - i as usize) * 16) as i32).rem_euclid(160),
+                        (((player_y_square) * 16) as i32).rem_euclid(160),
                     ],
                     transform,
                 );
@@ -195,8 +195,8 @@ impl Runtime for SlinkyRuntime {
                 }
             }),
             [
-                (((player_x_square - player_length as usize) * 16) as i32) % 160,
-                (((player_y_square) * 16) as i32) % 160,
+                (((player_x_square - player_length as usize) * 16) as i32).rem_euclid(160),
+                (((player_y_square) * 16) as i32).rem_euclid(160),
             ],
             if player_x_down {
                 // away from rest of slinky
@@ -217,34 +217,46 @@ impl Runtime for SlinkyRuntime {
                     }
                 }),
                 [
-                    (((player_x_square - player_length as usize) * 16) as i32) % 160,
-                    (((player_y_square) * 16) as i32) % 160,
+                    (((player_x_square - player_length as usize) * 16) as i32).rem_euclid(160),
+                    (((player_y_square) * 16) as i32).rem_euclid(160),
                 ],
                 BlitTransform::FLIP_X | BlitTransform::ROTATE,
             );
         }
         self.resources.framebuffer.replace_palette(PALETTE);
         // music
-        let middle_c = 69;
-        // vi - IV - I - V
-        // let notes = [69, 71, 65, 70, 67, 63];
-        let scale = [0, 2, 4, 7, 9, 11];
-        let chords = [(6, false), (4, true), (1, true), (5, true)];
-        let octave = 0;
-        let (current_chord, major) = chords[self.frames / 60 % chords.len()];
-        let frequency = scale[current_chord - 1] + (middle_c - octave * 12) as u8;
-        if self.frames % 60 == 0 {
-            if major {
-                self.play_major_chord(30, frequency, Duration(10))
-            } else {
-                self.play_minor_chord(30, frequency, Duration(10))
+        {
+            let middle_c = 69;
+            let scale = [0, 2, 4, 5, 7, 9, 11]; // 0-index
+                                                // I V vi IV
+            let chords = [(6, false), (4, true), (1, true), (5, true)]; // 1-index
+            let octave = 0;
+            let (current_chord, major) = chords[self.frames / 60 % chords.len()];
+            let frequency = scale[current_chord - 1] + (middle_c - octave * 12) as u8;
+            if [0, 10, 20].contains(&(self.frames % 60)) {
+                if major {
+                    self.play_major_chord(30, frequency, Duration(9))
+                } else {
+                    self.play_minor_chord(30, frequency, Duration(9))
+                }
             }
-        }
-        if self.frames % 60 == 30 {
-            self.play_harmonic(60, middle_c - 4 * 12, Duration(10))
+            if self.frames % 60 == 30 {
+                // self.play_harmonic(60, middle_c - 4 * 12, Duration(10))
+            }
+            if self.frames % 20 == 0 {
+                self.play_tones(
+                    100,
+                    [Some((middle_c as _, Mode::N1D2)), None, None, None],
+                    Duration(5),
+                )
+            }
         }
         // movement
         self.player.0[0] = self.player.0[0] + direction[0];
+        // reset positive
+        while self.player.0[0] < 0 {
+            self.player.0[0] += 216
+        }
         // timing
         self.frames += 1;
         // self.resources

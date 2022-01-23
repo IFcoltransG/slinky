@@ -15,7 +15,7 @@ pub trait Music {
         self.play_tones(
             volume,
             [
-                Some((frequency, Mode::N1D8)),
+                None,//Some((frequency, Mode::N1D8)),
                 Some((frequency * 2, Mode::N1D2)),
                 Some((frequency * 4, Mode::N1D4)),
                 Some((frequency * 8, Mode::N1D8)),
@@ -28,7 +28,7 @@ pub trait Music {
         self.play_tones(
             volume,
             [
-                Some((midi_to_frequency(midi_note), Mode::N1D8)),
+                None,//Some((midi_to_frequency(midi_note), Mode::N1D8)),
                 Some((midi_to_frequency(midi_note), Mode::N1D2)),
                 Some((midi_to_frequency(midi_note + 4), Mode::N1D4)),
                 Some((midi_to_frequency(midi_note + 7), Mode::N1D8)),
@@ -38,12 +38,10 @@ pub trait Music {
     }
 
     fn play_minor_chord(&self, volume: u32, midi_note: u8, length: Duration) {
-        let a: [u8; 10] = [10; 10];
-        let b: &[u8] = &a;
         self.play_tones(
             volume,
             [
-                Some((midi_to_frequency(midi_note), Mode::N1D8)),
+                None,//Some((midi_to_frequency(midi_note), Mode::N1D8)),
                 Some((midi_to_frequency(midi_note), Mode::N1D2)),
                 Some((midi_to_frequency(midi_note + 3), Mode::N1D4)),
                 Some((midi_to_frequency(midi_note + 7), Mode::N1D8)),

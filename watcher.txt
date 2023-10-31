@@ -1,0 +1,1 @@
+cargo build --release; wasm-opt -Oz --zero-filled-memory --strip-producers --dce -o target/wasm32-unknown-unknown/release/cart-opt.wasm target/wasm32-unknown-unknown/release/cart.wasm; wasm-strip target/wasm32-unknown-unknown/release/cart-opt.wasm; w4 run --no-open target/wasm32-unknown-unknown/release/cart-opt.wasm
